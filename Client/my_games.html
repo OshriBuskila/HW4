@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Games</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="ajaxcalls.js"></script> <!-- Reference to ajaxcalls.js -->
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #212529;
+      color: #fff;
+    }
+
+    nav {
+      background-color: #343a40;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    nav .user-section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+    }
+
+    nav .user-section span {
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+
+    nav .user-section a {
+      text-decoration: none;
+      font-size: 1em;
+      color: #007bff;
+    }
+
+    nav .user-section a:hover {
+      text-decoration: underline;
+    }
+
+    nav .user-section button {
+      padding: 5px 10px;
+      background-color: #d9534f;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    nav .user-section button:hover {
+      background-color: #c9302c;
+    }
+
+    nav .links {
+      display: flex;
+      gap: 20px;
+    }
+
+    nav .links a {
+      text-decoration: none;
+      font-size: 1.2em;
+      color: #fff;
+    }
+
+    nav .links a:hover {
+      text-decoration: underline;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 15px 0;
+      margin: 0;
+      background-color: #343a40;
+      font-size: 2em;
+    }
+
+    #games-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 20px;
+      gap: 15px;
+    }
+
+    .game {
+      background-color: #2b2f33;
+      border-radius: 10px;
+      width: 300px;
+      padding: 20px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      position: relative;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .game:hover {
+      transform: scale(1.05);
+      box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .game img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .game h3 {
+      font-size: 1.2em;
+      margin: 10px 0;
+      color: #fff;
+    }
+
+    .game p {
+      font-size: 0.9em;
+      margin: 5px 0;
+      color: #ccc;
+    }
+
+    .game p strong {
+      color: #fff;
+    }
+
+    .game button {
+      background-color: #d9534f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 15px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-size: 1em;
+      transition: background-color 0.3s ease;
+    }
+
+    .game button:hover {
+      background-color: #c9302c;
+    }
+
+    .filters {
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .filters input,
+    .filters button {
+      padding: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .filters button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .filters button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="user-section">
+      <span id="user-greeting">Welcome, Guest</span>
+      <a href="personal_area.html">User Settings</a>
+      <button id="logout-button">Logout</button>
+    </div>
+    <div class="links">
+      <a href="index.html">All Games</a>
+      <a href="my_games.html">My Games</a>
+    </div>
+  </nav>
+  <h1>My Games</h1>
+  <div class="filters">
+    <div>
+      <label for="price-input">Filter by Price:</label>
+      <input type="number" id="price-input" placeholder="Enter Price">
+      <button onclick="filterByPrice()">Filter</button>
+    </div>
+    <div>
+      <label for="rank-input">Filter by Rank:</label>
+      <input type="number" id="rank-input" placeholder="Enter Rank">
+      <button onclick="filterByRank()">Filter</button>
+    </div>
+  </div>
+  <div id="games-container"></div>
+
+  <script>
+    // Load games on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadUser();
+      loadMyGames();
+    });
+    let loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+    const apiBaseUrl = "https://localhost:7283/api/Games";
+
+    // Load user information from local storage
+    function loadUser() {
+      const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+      if (loggedInUser && loggedInUser.name) {
+        document.getElementById("user-greeting").textContent = `Welcome, ${loggedInUser.name}`;
+      } else {
+        document.getElementById("user-greeting").textContent = "Welcome, Guest";
+      }
+    }
+
+    // Logout function
+    document.getElementById("logout-button").addEventListener("click", function () {
+      localStorage.clear();
+      window.location.href = "login.html";
+    });
+
+    // Load games from the server
+    console.log(JSON.stringify(loggedInUser.id))
+    function loadMyGames() {
+  const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  if (!loggedInUser || !loggedInUser.id) {
+    alert("User is not logged in.");
+    window.location.href = "login.html"; // Redirect to login page if not logged in
+    return;
+  }
+
+  console.log(JSON.stringify(loggedInUser.id)); // Debugging user ID
+
+  ajaxCall(
+    "GET",
+    `${apiBaseUrl}/UserGames?userId=${loggedInUser.id}`,
+    null,
+    function (response) {
+      if (!response || response.length === 0) {
+        alert("You Dont have any games.");
+        const container = document.getElementById('games-container');
+        container.innerHTML = `<p style="text-align: center; color: white;">No games available in your list.</p>`;
+      } else {
+        renderGames(response); // Render the games if the user has any
+      }
+    },
+    function (err) {
+      console.error("Error loading games:", err);
+      alert("Failed to load games. Please try again later.");
+    }
+  );
+}
+
+
+    // Render games
+    function renderGames(games) {
+      const container = document.getElementById('games-container');
+      container.innerHTML = ''; // Clear existing games
+      games.forEach(game => {
+        const gameDiv = document.createElement('div');
+        gameDiv.className = 'game';
+        gameDiv.innerHTML = `
+          <img src="${game.headerImage}" alt="${game.name}">
+          <h3>${game.name}</h3>
+          <h4>Downloads:${game.numberOfPurchases}</h4>
+          <p><strong>Price:</strong> $${game.price}</p>
+          <p><strong>Rank Score:</strong> ${game.scoreRank}</p>
+          <button onclick="deleteGame(${game.appID})">Delete</button>
+        `;
+        container.appendChild(gameDiv);
+      });
+    }
+
+    function deleteGame(appId) {
+      ajaxCall(
+        'DELETE',
+        `${apiBaseUrl}/DeleteGame?UserId=${loggedInUser.id}&AppId=${appId}`,
+        null,
+        function () {
+          alert("Game deleted successfully.");
+          loadMyGames(); // Refresh the games list after deletion
+        },
+        function (err) {
+          console.error("Error deleting game:", err);
+
+          // Handle cases where the game is deleted but the error callback is triggered
+          if (err.status === 200 || err.status === 204) {
+            console.warn("Unexpected success response in error callback:", err);
+            alert("Game deleted successfully.");
+            loadMyGames(); // Refresh the games list
+          } else {
+            alert("Failed to delete the game.");
+          }
+        }
+      );
+    }
+
+    // Filter games by price
+    function filterByPrice() {
+      const price = document.getElementById('price-input').value;
+      if (price) {
+        ajaxCall(
+          'GET',
+          `${apiBaseUrl}/GetByPrice?UserID=${loggedInUser.id}&price=${price}`,
+          null,
+          function (response) {
+            renderGames(response);
+          },
+          function (err) {
+            console.error("Error filtering by price:", err);
+            alert("Failed to filter games by price.");
+          }
+        );
+      } else {
+        alert("Please enter a valid price.");
+      }
+    }
+
+    // Filter games by rank
+    function filterByRank() {
+      const rank = document.getElementById('rank-input').value;
+      if (rank) {
+        ajaxCall(
+          'GET',
+          `${apiBaseUrl}/GetByRank?UserID=${loggedInUser.id}&Rank=${rank}`,
+          //GetByRank?UserID=15&Rank=100
+          null,
+          function (response) {
+            renderGames(response);
+          },
+          function (err) {
+            console.error("Error filtering by rank:", err);
+            alert("Failed to filter games by rank.");
+          }
+        );
+      } else {
+        alert("Please enter a valid rank.");
+      }
+    }
+
+
+    ;
+  </script>
+</body>
+</html>

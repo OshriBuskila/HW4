@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="ajaxcalls.js"></script>
+  <style>
+    /* General styling */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #1d2b64, #f8cdda);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      animation: fadeIn 1.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    h2 {
+      font-size: 2em;
+      margin-bottom: 20px;
+      color: #f8cdda;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    input {
+      padding: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      background-color: #333;
+      color: white;
+      outline: none;
+    }
+
+    input::placeholder {
+      color: #aaa;
+    }
+
+    button {
+      padding: 12px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      background-color: #f8cdda;
+      color: #1d2b64;
+      cursor: pointer;
+      transition: all 0.3s ease-in-out;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #1d2b64;
+      color: #f8cdda;
+    }
+
+    .login-link {
+      margin-top: 20px;
+      color: #f8cdda;
+    }
+
+    .login-link a {
+      color: #f8cdda;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Create Your Account</h2>
+    <form id="register-form">
+      <input type="text" id="register-name" placeholder="Enter your name" required>
+      <input type="email" id="register-email" placeholder="Enter your email" required>
+      <input type="password" id="register-password" placeholder="Enter your password" minlength="6" required>
+      <button type="submit">Register</button>
+    </form>
+    <div class="login-link">
+      <p>Already have an account? <a href="login.html">Login here</a></p>
+    </div>
+  </div>
+
+  <script>
+    const apiBaseUrl = "https://localhost:7283/api/Users";
+
+    document.getElementById("register-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("register-name").value;
+      const email = document.getElementById("register-email").value;
+      const password = document.getElementById("register-password").value;
+
+      const data = JSON.stringify({ Name: name, Email: email, Password: password });
+
+      ajaxCall(
+        "POST",
+        `${apiBaseUrl}/Register`,
+        data,
+        function (response) {
+          if (response === 1) {
+            alert("Registration successful! You can now log in.");
+            window.location.href = "login.html"; // Redirect to login page
+          } else {
+            alert("Email is already registered.");
+          }
+        },
+        function (err) {
+          alert("An unexpected error occurred. Please try again later.");
+          console.log(err);
+        }
+      );
+    });
+  </script>
+</body>
+</html>

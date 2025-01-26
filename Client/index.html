@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steam Games</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="ajaxcalls.js"></script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #212529;
+      color: #fff;
+    }
+
+    nav {
+      background-color: #343a40;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    .rank-badge {
+     position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: #ffc107;
+  color: #212529;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+    nav .user-section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+    }
+
+    nav .user-section span {
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+
+    nav .user-section a {
+      text-decoration: none;
+      font-size: 1em;
+      color: #007bff;
+    }
+
+    nav .user-section a:hover {
+      text-decoration: underline;
+    }
+
+    nav .user-section button {
+      padding: 5px 10px;
+      background-color: #d9534f;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    nav .user-section button:hover {
+      background-color: #c9302c;
+    }
+
+    nav .links {
+      display: flex;
+      gap: 20px;
+    }
+
+    nav .links a {
+      text-decoration: none;
+      font-size: 1.2em;
+      color: #fff;
+    }
+
+    nav .links a:hover {
+      text-decoration: underline;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 15px 0;
+      margin: 0;
+      background-color: #343a40;
+      font-size: 2em;
+    }
+
+    #games-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 20px;
+      gap: 15px;
+    }
+
+    .game {
+      background-color: #2b2f33;
+      border-radius: 10px;
+      width: 300px;
+      padding: 20px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      position: relative;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .game:hover {
+      transform: scale(1.05);
+      box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .game img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .game h3 {
+      font-size: 1.2em;
+      margin: 10px 0;
+      color: #fff;
+    }
+
+    .game p {
+      font-size: 0.9em;
+      margin: 5px 0;
+      color: #ccc;
+    }
+
+    .game p strong {
+      color: #fff;
+    }
+
+    .game button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 15px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-size: 1em;
+      transition: background-color 0.3s ease;
+    }
+
+    .game button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="user-section">
+      <span id="user-greeting">Welcome, Guest</span>
+      <a href="personal_area.html">User Settings</a>
+      <button id="logout-button">Logout</button>
+    </div>
+    <div class="links">
+      <a href="index.html">All Games</a>
+      <a href="my_games.html">My Games</a>
+      <a href="adminPage.html" id="admin-link" style="display: none;">Admin Page</a>
+    </div>
+  </nav>
+  <h1>Steam Games</h1>
+  <div id="games-container"></div>
+
+  <script>
+    const apiBaseUrl = "https://localhost:7283/api/Games";
+    document.addEventListener("DOMContentLoaded", function () {
+    const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (loggedInUser && loggedInUser.id === 25) {
+      document.getElementById("admin-link").style.display = "block";
+    }
+  });
+
+    // Load user information from local storage
+    function loadUser() {
+      const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+      if (loggedInUser && loggedInUser.name) {
+        document.getElementById("user-greeting").textContent = `Welcome, ${loggedInUser.name}`;
+      } else {
+        document.getElementById("user-greeting").textContent = "Welcome, Guest";
+      }
+    }
+
+    // Logout function
+    document.getElementById("logout-button").addEventListener("click", function () {
+      localStorage.clear(); // Clear local storage
+      window.location.href = "login.html"; // Redirect to login page
+    });
+
+    // Load games from the server
+    function loadGames() {
+      ajaxCall(
+        'GET',
+        `${apiBaseUrl}/AllGames`,
+        null,
+        function (response) {
+          const container = document.getElementById('games-container');
+          container.innerHTML = ''; // Clear the container
+          response.forEach(game => {
+            const gameDiv = document.createElement('div');
+            gameDiv.className = 'game';
+            gameDiv.innerHTML = `
+              <div class="rank-badge">${game.scoreRank || 'N/A'}</div>
+              <img src="${game.headerImage}" alt="${game.name}">
+              <h3>${game.name}</h3>
+              <h4>Downloads: ${game.numberOfPurchases}</h4>
+              <p><strong>Price:</strong> ${game.price > 0 ? `$${game.price.toFixed(2)}` : 'Free to Play'}</p>
+              <p><strong>Description:</strong> ${game.description ? game.description.slice(0, 100) + '...' : 'No description available.'}</p>
+              </p>
+              <button onclick="addToMyList(${game.appID})">Add to Favorites</button>
+            `;
+            container.appendChild(gameDiv);
+          });
+        },
+        function (error) {
+          console.error('Error fetching games:', error);
+          alert('Failed to load games. Please try again later.');
+        }
+      );
+    }
+    function addToMyList(appID) {
+      const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+
+      if (!loggedInUser || !loggedInUser.id) {
+        alert("User is not logged in.");
+        return;
+      }
+
+      ajaxCall(
+        'POST',
+        `${apiBaseUrl}/UserBuyGame?userId=${loggedInUser.id}&appID=${appID}`,
+        null,
+        function (response) {
+          if (response === 1) {
+            alert("Game added to your favorites!");
+            loadGames(); //this is for updating the downloads
+          } 
+          else {
+            alert("Game is already in your favorites.");
+           }},
+        function (error) {
+          console.error("Error adding game to favorites:", error);
+          alert("An error occurred. Please try again.");
+        }
+      );
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      loadUser(); // Load user information
+      loadGames(); // Load games
+    });
+  </script>
+</body>
+</html>

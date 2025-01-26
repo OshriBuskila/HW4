@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Page</title>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #212529;
+      color: #fff;
+    }
+
+    nav {
+      background-color: #343a40;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    nav .user-section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    nav .user-section span {
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+
+    nav .user-section button {
+      padding: 5px 10px;
+      background-color: #d9534f;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    nav .user-section button:hover {
+      background-color: #c9302c;
+    }
+
+    nav .links a {
+      text-decoration: none;
+      font-size: 1.2em;
+      color: #fff;
+    }
+
+    nav .links a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 90%;
+      margin: 50px auto;
+      background-color: #2b2f33;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    h2 {
+      color: #ffc107;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #343a40;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="user-section">
+      <span id="user-greeting">Welcome, Admin</span>
+      <button id="logout-button">Logout</button>
+    </div>
+    <div class="links">
+      <a href="index.html">Home</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h2>Users BI</h2>
+    <table id="admin-table-users" class="display">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Games Purchased</th>
+          <th>Money Spent</th>
+          <th>Is Active</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Games BI</h2>
+    <table id="admin-table-games" class="display">
+      <thead>
+        <tr>
+          <th>App ID</th>
+          <th>Name</th>
+          <th>Number of Purchases</th>
+          <th>Income</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const apiBaseUrl = "https://localhost:7283/api";
+
+    // Logout Functionality
+    $('#logout-button').click(function () {
+      localStorage.clear();
+      window.location.href = "login.html";
+    });
+
+    // Initialize Users BI Table
+    $('#admin-table-users').DataTable({
+      ajax: {
+        url: `${apiBaseUrl}/Users/UsersBI`,
+        dataSrc: ''
+      },
+      columns: [
+        { data: "Id" },
+        { data: "Name" },
+        { data: "GamesPurchased" },
+        { data: "MoneySpent" },
+        { 
+          data: "IsActive",
+          render: function (data, type, row) {
+            return `
+              <input type="checkbox" 
+                     ${data ? "checked" : ""} 
+                     onchange="updateActivation(${row.Id}, this.checked)">
+            `;
+          }
+        }
+      ]
+    });
+
+    // Define updateActivation globally
+    window.updateActivation = function (id, isActive) {
+      const apiUrl = `${apiBaseUrl}/Users/isActive?id=${id}&userActivation=${isActive}`;
+      ajaxCall(
+        "PUT",
+        apiUrl,
+        null,
+        function (response) {
+          if (response === 1) {
+            alert("User activation status updated successfully.");
+          } else {
+            alert("Failed to update user activation status.");
+          }
+        },
+        function (error) {
+          console.error("Error updating activation status:", error);
+          alert("An error occurred while updating activation status.");
+        }
+      );
+    };
+
+    // Initialize Games BI Table
+    $('#admin-table-games').DataTable({
+      ajax: {
+        url: `${apiBaseUrl}/Games/GamesBI`,
+        dataSrc: ''
+      },
+      columns: [
+        { data: "AppId" },
+        { data: "Name" },
+        { data: "NumberOfPurchases" },
+        { data: "Income" }
+      ]
+    });
+
+    // AJAX Call Wrapper
+    function ajaxCall(method, api, data, successCB, errorCB) {
+      $.ajax({
+        type: method,
+        url: api,
+        data: data,
+        cache: false,
+        contentType: "application/json",
+        dataType: "json",
+        success: successCB,
+        error: errorCB
+      });
+    }
+  </script>
+</body>
+</html>

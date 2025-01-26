@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Area</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="ajaxcalls.js"></script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #212529;
+      color: #fff;
+    }
+
+    nav {
+      background-color: #343a40;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    nav .user-section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+    }
+
+    nav .user-section span {
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+
+    nav .user-section a {
+      text-decoration: none;
+      font-size: 1em;
+      color: #007bff;
+    }
+
+    nav .user-section a:hover {
+      text-decoration: underline;
+    }
+
+    nav .user-section button {
+      padding: 5px 10px;
+      background-color: #d9534f;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    nav .user-section button:hover {
+      background-color: #c9302c;
+    }
+
+    nav .links {
+      display: flex;
+      gap: 20px;
+    }
+
+    nav .links a {
+      text-decoration: none;
+      font-size: 1.2em;
+      color: #fff;
+    }
+
+    nav .links a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background-color: #2b2f33;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    input {
+      padding: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="user-section">
+      <span id="user-greeting">Welcome, Guest</span>
+      <a href="#">User Settings</a>
+      <button id="logout-button">Logout</button>
+    </div>
+    <div class="links">
+      <a href="index.html">All Games</a>
+      <a href="my_games.html">My Games</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h2>Update Your Information</h2>
+
+    <form id="update-name-form">
+      <label for="new-name">Change Name:</label>
+      <input type="text" id="new-name" placeholder="Enter new name" required>
+      <button type="submit">Update Name</button>
+    </form>
+
+    <form id="update-password-form">
+      <label for="new-password">Change Password:</label>
+      <input type="password" id="new-password" placeholder="Enter new password" minlength="6" required>
+      <button type="submit">Update Password</button>
+    </form>
+
+    <form id="update-email-form">
+      <label for="new-email">Change Email:</label>
+      <input type="email" id="new-email" placeholder="Enter new email" required>
+      <button type="submit">Update Email</button>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", loadUser);
+    const apiBaseUrl = "https://localhost:7283/api/Users";
+
+    // Load user information from local storage
+    function loadUser() {
+      const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+      if (loggedInUser && loggedInUser.name) {
+        document.getElementById("user-greeting").textContent = `Welcome, ${loggedInUser.name}`;
+      } else {
+        document.getElementById("user-greeting").textContent = "Welcome, Guest";
+      }
+    }
+
+    // Logout function
+    document.getElementById("logout-button").addEventListener("click", function () {
+      localStorage.clear();
+      window.location.href = "login.html";
+    });
+
+    // Handle name update
+    document.getElementById("update-name-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      let loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+      let newName = document.getElementById("new-name").value;
+      let data = { id: loggedInUser.id, name: newName, email: loggedInUser.email, password: loggedInUser.password };
+
+      if (!loggedInUser || !loggedInUser.id) {
+        alert("User is not logged in.");
+        return;
+      }
+
+      ajaxCall(
+        "PUT",
+        `${apiBaseUrl}/UpdateUser`,
+        JSON.stringify(data),
+        function (response) {
+          alert("Name updated successfully.");
+          loggedInUser.name = newName;
+          localStorage.setItem("loggedInUser", JSON.stringify(loggedInUser));
+          loadUser();
+        },
+        function (error) {
+          console.error("Error updating name:", error);
+          alert("An error occurred. Please try again.");
+        }
+      );
+    });
+
+    // Handle password update
+    document.getElementById("update-password-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      let newPassword = document.getElementById("new-password").value;
+      let loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+      let data = { id: loggedInUser.id, name: loggedInUser.name, email: loggedInUser.email, password: newPassword };
+
+      if (!loggedInUser || !loggedInUser.id) {
+        alert("User is not logged in.");
+        return;
+      }
+
+      ajaxCall(
+        "PUT",
+        `${apiBaseUrl}/UpdateUser`,
+        JSON.stringify(data),
+        function (response) {
+          if (response) {
+            alert("Password updated successfully.");
+            loggedInUser.password = newPassword;
+            localStorage.setItem("loggedInUser", JSON.stringify(loggedInUser));
+          } else {
+            alert("Failed to update password.");
+          }
+        },
+        function (error) {
+          console.error("Error updating password:", error);
+          alert("An error occurred. Please try again.");
+        }
+      );
+    });
+
+    // Handle email update
+    document.getElementById("update-email-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      let newEmail = document.getElementById("new-email").value;
+      let loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+      let data = { id: loggedInUser.id, name: loggedInUser.name, email: newEmail, password: loggedInUser.password };
+
+      if (!loggedInUser || !loggedInUser.id) {
+        alert("User is not logged in.");
+        return;
+      }
+
+      ajaxCall(
+        "PUT",
+        `${apiBaseUrl}/UpdateUser`,
+        JSON.stringify(data),
+        function (response) {
+          if (response) {
+            alert("Email updated successfully.");
+            loggedInUser.email = newEmail;
+            localStorage.setItem("loggedInUser", JSON.stringify(loggedInUser));
+          } else {
+            alert("Failed to update email.");
+          }
+        },
+        function (error) {
+          console.error("Error updating email:", error);
+          alert("An error occurred. Please try again.");
+        }
+      );
+    });
+  </script>
+</body>
+
+</html>
